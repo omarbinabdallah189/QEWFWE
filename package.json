@@ -1,0 +1,32 @@
+{
+  "name": "discord-selfbot",
+  "version": "1.0.0",
+  "description": "Discord selfbot script with voice channel connection and dynamic activity updates",
+  "main": "me.js",
+  "scripts": {
+    "start": "node me.js"
+  },
+  "dependencies": {
+    "@discordjs/voice": "^0.18.0",
+    "axios": "^1.4.0",
+    "discord.js": "^14.21.0",
+    "discord.js-selfbot-v13": "^3.7.0",
+    "dotenv": "^17.2.1",
+    "node-fetch": "^3.3.1"
+  },
+  "engines": {
+    "node": ">=16.6.0"
+  },
+  "author": "",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omarbinabdallah189/CCCCC.git"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/omarbinabdallah189/CCCCC/issues"
+  },
+  "homepage": "https://github.com/omarbinabdallah189/CCCCC#readme"
+}
