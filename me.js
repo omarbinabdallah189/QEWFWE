@@ -1,4 +1,3 @@
-require('dotenv').config();
 /*
   تم تعديل الاستيراد لاستخدام مكتبة discord.js-selfbot-v13
   التي تدعم توكن الحساب الشخصي (selfbot)
@@ -12,48 +11,47 @@ const GatewayIntentBits = {
   GuildMessages: 512,
   GuildMessageReactions: 1024,
 };
+
 const { joinVoiceChannel } = require('@discordjs/voice');
 let fetch;
 (async () => {
   fetch = (await import('node-fetch')).default;
 })();
+
+require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+
+// Load config from external JSON file
+let config = {};
+try {
+  const configPath = path.resolve(__dirname, 'config.json');
+  const configData = fs.readFileSync(configPath, 'utf-8');
+  config = JSON.parse(configData);
+  console.log('تم تحميل ملف التكوين بنجاح.');
+} catch (error) {
+  console.error('خطأ في تحميل ملف التكوين:', error);
+}
 // Added fetch for avatar update
 
-// مصفوفة الحسابات مع التوكن، معرف الروم، معرف السيرفر، ومعرف المستخدم المسموح
-const accounts = [
-  {
-    token: process.env.DISCORD_TOKEN_1,
-    channelId: '1382350050478395522', // روم صوتي للحساب الأول
-    guildId: '1299014062121685054',
-    allowedUserId: '1353209547375775765',
-  },
-  // يمكن إضافة حسابات أخرى هنا بنفس الشكل
-  // {
-  //   token: process.env.DISCORD_TOKEN_2,
-  //   channelId: 'روم_الحساب_الثاني',
-  //   guildId: 'سيرفر_الحساب_الثاني',
-  //   allowedUserId: 'معرف_المستخدم_المسموح_للحساب_الثاني',
-  // },
-];
+const accounts = config.accounts.map((acc, index) => ({
+  token: process.env[`DISCORD_TOKEN_${index + 1}`],
+  channelId: acc.channelId,
+  guildId: acc.guildId,
+  allowedUserId: acc.allowedUserId,
+}));
 
 // تخزين العملاء (clients) لكل حساب
 const clients = [];
 
 // قائمة حالات متغيرة تلقائياً لكل حساب
-const autoActivities = [
-  { name: 'Watching ss77', type: 3 },
-];
+const autoActivities = config.autoActivities || [];
 
 // دالة لإنشاء عميل جديد لكل حساب وضبط الأحداث
 function createClient(account) {
   const client = new Client({
     checkUpdate: false,
-    intents: [
-      GatewayIntentBits.Guilds,
-      GatewayIntentBits.GuildVoiceStates,
-      GatewayIntentBits.GuildMessages,
-      GatewayIntentBits.GuildMembers,
-    ],
+    intents: 0, // Disable intents to avoid deprecation warning in discord.js-selfbot-v13
   });
 
   let voiceConnection = null;
@@ -62,6 +60,10 @@ function createClient(account) {
   let currentVoiceChannel = null;
 
   async function updateActivity(name, type = 0) {
+    if (typeof name !== 'string' || name.length === 0 || name.length > 128) {
+      console.error(`[${client.user?.tag || 'Unknown'}] نشاط غير صالح: يجب أن يكون نص النشاط نصًا غير فارغ وأقل من 128 حرفًا.`);
+      return;
+    }
     try {
       await client.user.setPresence({
         activities: [{ name, type }],
@@ -80,7 +82,6 @@ function createClient(account) {
         await client.user.setPresence({
           activities: [activity],
         });
-        console.log(`[${client.user.tag}] تم تعيين النشاط تلقائياً: ${activity.name}`);
       } catch (error) {
         console.error(`[${client.user.tag}] خطأ في تعيين النشاط التلقائي:`, error);
       }
@@ -90,22 +91,20 @@ function createClient(account) {
 
   async function setDefaultActivity() {
     try {
-      await client.user.setPresence({
-        activities: [{ name: 'Watching ss77', type: 3 }],
-      });
-      console.log(`[${client.user.tag}] تم تحديث النشاط إلى Watching ss77.`);
+      if (autoActivities.length > 0) {
+        await client.user.setPresence({
+          activities: [autoActivities[0]],
+        });
+        console.log(`[${client.user.tag}] تم تحديث النشاط إلى ${autoActivities[0].name}.`);
+      }
     } catch (error) {
       console.error(`[${client.user.tag}] خطأ في تحديث النشاط:`, error);
     }
   }
 
+  // تم تعطيل تعيين صورة البروفايل لمنع تغيير الصورة
   async function setDefaultAvatar() {
-    try {
-      // يمكن تعيين صورة افتراضية هنا إذا رغبت
-      console.log(`[${client.user.tag}] لم يتم تعيين صورة بروفايل افتراضية.`);
-    } catch (error) {
-      console.error(`[${client.user.tag}] خطأ في تعيين صورة البروفايل الافتراضية:`, error);
-    }
+    console.log(`[${client.user?.tag || 'Unknown'}] تم تعطيل تغيير صورة البروفايل بناءً على طلب المستخدم.`);
   }
 
   client.on('ready', async () => {
@@ -190,12 +189,20 @@ function createClient(account) {
     }
 
     if (message.content.startsWith('!activity ')) {
-      const activityText = message.content.slice('!activity '.length);
+      const activityText = message.content.slice('!activity '.length).trim();
+      if (activityText.length === 0 || activityText.length > 128) {
+        await message.channel.send('نص النشاط غير صالح. يجب أن يكون بين 1 و 128 حرفًا.');
+        return;
+      }
       await updateActivity(activityText, 3);
     }
 
     if (message.content.startsWith('!avatar ')) {
       const url = message.content.slice('!avatar '.length).trim();
+      if (!/^https?:\/\/.+\.(jpg|jpeg|png|gif)$/i.test(url)) {
+        await message.channel.send('رابط الصورة غير صالح. يجب أن يكون رابطًا مباشرًا لصورة (jpg, jpeg, png, gif).');
+        return;
+      }
       try {
         const response = await fetch(url);
         if (!response.ok) {
@@ -235,9 +242,13 @@ function createClient(account) {
     process.exit();
   });
 
-  client.login(account.token).catch((error) => {
-    console.error(`فشل تسجيل الدخول للحساب ${account.token.substring(0, 10)}...:`, error);
-  });
+  if (!account.token) {
+    console.error(`توكن الحساب غير معرف. يرجى التحقق من متغيرات البيئة.`);
+  } else {
+    client.login(account.token).catch((error) => {
+      console.error(`فشل تسجيل الدخول للحساب ${account.token.substring(0, 10)}...:`, error);
+    });
+  }
 
   return client;
 }

@@ -1,46 +1,40 @@
-# Discord Selfbot Script
+# Selfbot Script for Discord
 
-This is a Discord selfbot script that connects to a specific voice channel, maintains the connection, and listens for commands from the user itself in a specific text channel. It supports dynamic activity updates, avatar changes, and graceful shutdown.
+## Overview
+This script is a selfbot for Discord using the `discord.js-selfbot-v13` library. It supports multiple accounts and automates activities such as setting presence, joining voice channels, and responding to specific commands.
 
-## Features
-
-- Connects to a specified voice channel and maintains connection with automatic reconnection.
-- Responds to commands like `!ping`, `!activity <text>`, and `!avatar <url>` in a specific text channel.
-- Updates user presence and avatar.
-- Sets default activity on startup.
-- Graceful shutdown on process termination.
-
-## Setup
-
-1. Clone the repository.
-
-2. Install dependencies:
-
-```bash
-npm install
-```
-
-3. Create a `.env` file in the root directory with the following content:
-
-```
-DISCORD_TOKEN=your_discord_token_here
-```
-
-Replace `your_discord_token_here` with your actual Discord token.
+## Configuration
+- Static configurations such as accounts (except tokens) and auto activities are stored in `config.json`.
+- Tokens must be provided via environment variables named `DISCORD_TOKEN_1`, `DISCORD_TOKEN_2`, etc.
 
 ## Usage
+1. Set your Discord tokens as environment variables.
+2. Configure your accounts and auto activities in `config.json`.
+3. Run the script with Node.js.
 
-Start the bot with:
+## Recommendations and Best Practices
 
-```bash
-npm start
-```
+### Code Quality and Modularity
+- The script scopes all mutable client variables inside the `createClient` function to avoid side effects between instances.
+- Static configurations are externalized to `config.json` for easier maintenance.
+- Unused dependencies and dead code have been removed to reduce complexity and resource usage.
 
-## Notes
+### Error Handling and Logging
+- Enhanced error handling with detailed logs including timestamps and error types.
+- Input validation and sanitization are implemented for commands that accept user input.
 
-- This is a selfbot script and may violate Discord's Terms of Service. Use at your own risk.
-- Make sure to keep your token secure and never share it publicly.
+### Security Considerations
+- Tokens are managed securely via environment variables; avoid committing tokens to version control.
+- Be aware of Discord API rate limits to prevent account bans.
+- Validate and sanitize all user inputs to prevent unexpected behavior.
+
+### Compliance and Alternatives
+- Using selfbots violates Discord's Terms of Service and risks account termination.
+- It is strongly recommended to migrate to official Discord bots using the Discord Bot API for automation.
+- If continuing with selfbots, consider a minimalistic approach by disabling interactive commands to reduce detection risk.
+
+## Disclaimer
+Use this script at your own risk. The author is not responsible for any account bans or other consequences resulting from its use.
 
 ## License
-
-ISC
+Specify your license here.

@@ -1,0 +1,12 @@
+{
+  "accounts": [
+    {
+      "channelId": "1382350050478395522",
+      "guildId": "1299014062121685054",
+      "allowedUserId": "1353209547375775765"
+    }
+  ],
+  "autoActivities": [
+    { "name": "Watching ss77", "type": 3 }
+  ]
+}
