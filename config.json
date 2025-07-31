@@ -8,5 +8,6 @@
   ],
   "autoActivities": [
     { "name": "Watching ss77", "type": 3 }
-  ]
+  ],
+  "autoActivityInterval": 10000
 }

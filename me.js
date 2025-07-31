@@ -3,15 +3,6 @@
   التي تدعم توكن الحساب الشخصي (selfbot)
 */
 const { Client } = require('discord.js-selfbot-v13');
-// GatewayIntentBits غير متوفر في discord.js-selfbot-v13 لذلك نستخدم القيم الرقمية مباشرة
-const GatewayIntentBits = {
-  Guilds: 1,
-  GuildMembers: 2,
-  GuildVoiceStates: 128,
-  GuildMessages: 512,
-  GuildMessageReactions: 1024,
-};
-
 const { joinVoiceChannel } = require('@discordjs/voice');
 let fetch;
 (async () => {
@@ -22,19 +13,22 @@ require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 
-// Load config from external JSON file
+// تحميل ملف الإعدادات مع معالجة أفضل للأخطاء
 let config = {};
 try {
   const configPath = path.resolve(__dirname, 'config.json');
+  if (!fs.existsSync(configPath)) {
+    throw new Error('ملف config.json غير موجود.');
+  }
   const configData = fs.readFileSync(configPath, 'utf-8');
   config = JSON.parse(configData);
   console.log('تم تحميل ملف التكوين بنجاح.');
 } catch (error) {
-  console.error('خطأ في تحميل ملف التكوين:', error);
+  console.error('خطأ فادح في تحميل أو تحليل ملف التكوين:', error.message);
+  process.exit(1); // إيقاف السكريبت في حالة وجود خطأ في ملف التكوين
 }
-// Added fetch for avatar update
 
-const accounts = config.accounts.map((acc, index) => ({
+const accounts = (config.accounts || []).map((acc, index) => ({
   token: process.env[`DISCORD_TOKEN_${index + 1}`],
   channelId: acc.channelId,
   guildId: acc.guildId,
@@ -46,12 +40,13 @@ const clients = [];
 
 // قائمة حالات متغيرة تلقائياً لكل حساب
 const autoActivities = config.autoActivities || [];
+const autoActivityIntervalTime = config.autoActivityInterval || 15000; // 15 seconds default
 
 // دالة لإنشاء عميل جديد لكل حساب وضبط الأحداث
 function createClient(account) {
   const client = new Client({
     checkUpdate: false,
-    intents: 0, // Disable intents to avoid deprecation warning in discord.js-selfbot-v13
+    intents: 0, // Intents غير ضرورية في v13 self-bots
   });
 
   let voiceConnection = null;
@@ -74,8 +69,10 @@ function createClient(account) {
     }
   }
 
-  function startAutoActivity(intervalMs = 10000) {
+  function startAutoActivity() {
     if (autoActivityInterval) clearInterval(autoActivityInterval);
+    if (autoActivities.length === 0) return;
+
     autoActivityInterval = setInterval(async () => {
       const activity = autoActivities[autoActivityIndex];
       try {
@@ -86,7 +83,7 @@ function createClient(account) {
         console.error(`[${client.user.tag}] خطأ في تعيين النشاط التلقائي:`, error);
       }
       autoActivityIndex = (autoActivityIndex + 1) % autoActivities.length;
-    }, intervalMs);
+    }, autoActivityIntervalTime);
   }
 
   async function setDefaultActivity() {
@@ -121,7 +118,7 @@ function createClient(account) {
 
     await setDefaultAvatar();
     await setDefaultActivity();
-    startAutoActivity(15000);
+    startAutoActivity();
 
     // الانضمام التلقائي للروم الصوتي
     try {
@@ -231,7 +228,7 @@ function createClient(account) {
     }
     if (message.content === '!autoactivity on') {
       if (!autoActivityInterval) {
-        startAutoActivity(15000);
+        startAutoActivity();
         await message.channel.send('تم تفعيل تغيير النشاط التلقائي.');
       }
     }
